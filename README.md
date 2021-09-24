@@ -1,2 +1,2 @@
-# LAB1CS
-Parser for .audit files that converts them into json files
+# LAB2CS
+Gui for opening, parsing, saving to json and exporting audit files

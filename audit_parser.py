@@ -36,7 +36,7 @@ def parse_match(child_match):
     #     'Made by Gheorghe Morari FAF-192'
     if not has_children:
         for prop in re.finditer(property_re, match_content):
-            dictionary[prop.group(1)] = prop.group(2)
+            dictionary[prop.group(1)] = prop.group(2).replace('\n','')
 
     return name, dictionary
 
@@ -45,7 +45,7 @@ def audit_parser(contents):
     content_matches = re.finditer(content_match_re, contents)
     for content_match in content_matches:
         name, output_dict = parse_match(content_match)
-        return output_dict
+        return {name:output_dict}
 
     return None
 
