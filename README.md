@@ -1,2 +1,2 @@
-# LAB2CS
-Gui for opening, parsing, saving to json and exporting audit files
+# LAB3CS
+GUI for performing an audit of the system, using the options that were selected, and outputs the results to the screen.

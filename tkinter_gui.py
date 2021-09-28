@@ -2,18 +2,15 @@ import json
 import os
 import tkinter as tk
 import tkinter.ttk as ttk
-import webbrowser
 from tkinter import filedialog, Tk
-from tkinter import font
-from tkinter import messagebox
-from urllib.parse import urlparse
 
 import audit_exporter
 import audit_parser
+from audit_system import check_custom_item
 from checkbox_treeview import CheckboxTreeview
 
 MAX_N_SHOW_ITEM = 30000
-FILETYPES = [("JSON files or AUDIT files", "*.json;*.audit"),("All Files", "*.*")]
+FILETYPES = [("JSON files or AUDIT files", "*.json;*.audit"), ("All Files", "*.*")]
 
 
 class TreeFrame(ttk.Frame):
@@ -285,6 +282,21 @@ class TreeFrame(ttk.Frame):
             self.tree.uncheck_ancestor(child)
             self.tree.uncheck_descendant(child)
 
+    def audit_system(self):
+        custom_item_iterator = get_custom_items(self.get_json_dict())
+        for custom_item in custom_item_iterator:
+            result = check_custom_item(custom_item)
+        pass
+
+
+def get_custom_items(dictionary):
+    for key, value in dictionary.items():
+        if type(value) is dict:
+            if "custom_item" in key:
+                yield value
+            else:
+                yield from get_custom_items(value)
+
 
 def run_gui():
     root: Tk = tk.Tk()
@@ -298,6 +310,7 @@ def run_gui():
                           command=app.open_file_tool)
     file_menu.add_command(label="Save Json", accelerator='Ctrl+S', command=app.save_json)
     file_menu.add_command(label="Export Audit", command=app.export_audit)
+    file_menu.add_command(label="Audit System", command=app.audit_system)
     menubar.add_cascade(label="File", menu=file_menu)
 
     tools_menu = tk.Menu(menubar, tearoff=0)
