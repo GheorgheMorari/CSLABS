@@ -130,4 +130,4 @@ dmypy.json
 .idea/
 .run/
 *.wsb
-*.sc1
+*.ps1
