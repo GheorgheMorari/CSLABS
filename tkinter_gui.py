@@ -225,9 +225,13 @@ class TreeFrame(ttk.Frame):
                 self.open_json_file(file_path)
 
     def init_shortcuts(self):
-        self.bind_all("<Control-e>", self.expand_all)
-        self.bind_all("<Control-l>", self.collapse_all)
-        self.bind_all("<Control-o>", self.open_file_tool)
+        self.master.bind("<Control-e>", self.expand_all)
+        self.master.bind("<Control-l>", self.collapse_all)
+        self.master.bind("<Control-o>", self.open_file_tool)
+        # TODO REMOVE THESE:
+        self.master.bind("<Control-c>",
+                      lambda e: self.set_data(audit_parser.get_json_from_audit('MSCT_Windows_10_2004_v1.0.0.audit')))
+        self.master.bind("<Control-x>", lambda e: self.audit_system())
 
     def recursive_dict(self, index):
         childrens = self.tree.get_children(index)
@@ -243,7 +247,8 @@ class TreeFrame(ttk.Frame):
             return self.tree.item(index, 'text'), ret
         else:
             # Is parameter or modifier
-            if len(self.tree.get_children(childrens)) != 0:
+            children_of_children = self.tree.get_children(childrens)
+            if len(children_of_children) != 0 and index not in children_of_children:
                 key, val = self.recursive_dict(childrens)
                 return self.tree.item(index, 'text'), {key: val}
             return self.tree.item(index, 'text'), self.tree.item(childrens, 'text')
@@ -284,9 +289,40 @@ class TreeFrame(ttk.Frame):
 
     def audit_system(self):
         custom_item_iterator = get_custom_items(self.get_json_dict())
+        results = {"passed": {}, "failed": {}, "unknown": {}}
         for custom_item in custom_item_iterator:
-            result = check_custom_item(custom_item)
-        pass
+            check_custom_item(custom_item, results)
+
+        root = tk.Toplevel(self)
+        root.geometry('500x500')
+        root.wm_title("Window")
+        menubar = tk.Menu(root)
+        app = TreeFrame(root)
+
+        app.set_data(results)
+        file_menu = tk.Menu(menubar, tearoff=0)
+        file_menu.add_command(label="Save Json", accelerator='Ctrl+S', command=app.save_json)
+        menubar.add_cascade(label="File", menu=file_menu)
+
+        tools_menu = tk.Menu(menubar, tearoff=0)
+        tools_menu.add_command(label="Expand All", accelerator="Ctrl+E", command=app.expand_all)
+        tools_menu.add_command(label="Collapse All", accelerator="Ctrl+L", command=app.collapse_all)
+        tools_menu.add_command(label="Check All", command=app.check_all)
+        tools_menu.add_command(label="Uncheck All", command=app.uncheck_all)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+
+        app.grid(column=0, row=0, sticky=(tk.N, tk.S, tk.E, tk.W))
+        root.columnconfigure(0, weight=1)
+        root.rowconfigure(0, weight=1)
+        root.config(menu=menubar)
+        menubar.add_command(label=app.get_check_info())
+
+    def get_check_info(self):
+        info_dict = self.get_json_dict()
+        passed_num = len(info_dict['passed'])
+        failed_num = len(info_dict['failed'])
+        unk_num = len(info_dict['unknown'])
+        return f"Passed: {passed_num}/{passed_num + failed_num} Unknown:{unk_num}"
 
 
 def get_custom_items(dictionary):
@@ -310,7 +346,6 @@ def run_gui():
                           command=app.open_file_tool)
     file_menu.add_command(label="Save Json", accelerator='Ctrl+S', command=app.save_json)
     file_menu.add_command(label="Export Audit", command=app.export_audit)
-    file_menu.add_command(label="Audit System", command=app.audit_system)
     menubar.add_cascade(label="File", menu=file_menu)
 
     tools_menu = tk.Menu(menubar, tearoff=0)
@@ -319,6 +354,8 @@ def run_gui():
     tools_menu.add_command(label="Check All", command=app.check_all)
     tools_menu.add_command(label="Uncheck All", command=app.uncheck_all)
     menubar.add_cascade(label="Tools", menu=tools_menu)
+
+    menubar.add_command(label="Audit System", command=app.audit_system)
 
     app.grid(column=0, row=0, sticky=(tk.N, tk.S, tk.E, tk.W))
     root.columnconfigure(0, weight=1)
