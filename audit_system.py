@@ -1,16 +1,6 @@
 import re
 import winreg
 
-
-# TODO create file menu DONE
-# TODO export json data to a function in this file DONE
-# TODO get every custom item in the exported json DONE
-# TODO make a custom evaluation for each check type:
-# TODO evaluate each type of check
-# TODO take account which custom items failed
-# TODO create new frame which displays what check passed and failed, make the failed checks be first
-
-
 def check_custom_item(custom_item_dict, result_dict):
     if 'type' not in custom_item_dict:
         result_dict["unknown"][custom_item_dict["description"]] = {'reason': f"Custom item has no type.",
