@@ -295,7 +295,7 @@ class TreeFrame(ttk.Frame):
 
         root = tk.Toplevel(self)
         root.geometry('500x500')
-        root.wm_title("Window")
+        root.wm_title("Check audit")
         menubar = tk.Menu(root)
         app = TreeFrame(root)
 
@@ -336,7 +336,7 @@ def get_custom_items(dictionary):
 
 def run_gui():
     root: Tk = tk.Tk()
-    root.title('PyJSONViewer')
+    root.title('Audit Parser-Exporter')
     root.geometry("600x500")
     menubar = tk.Menu(root)
     app = TreeFrame(root)
