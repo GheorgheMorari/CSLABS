@@ -6,7 +6,7 @@ from tkinter import filedialog, Tk
 
 import audit_exporter
 import audit_parser
-from audit_system import check_custom_item
+from audit_system import check_custom_item, backup_registry, write_registry, restore_registry
 from checkbox_treeview import CheckboxTreeview
 
 MAX_N_SHOW_ITEM = 30000
@@ -26,6 +26,7 @@ class TreeFrame(ttk.Frame):
         self.init_bottom_frame()
         self.search_results = []
         self.search_index = 0
+        self.check_results = ""
 
         self.popup = tk.Menu(self, tearoff=0)
         self.popup_selected = None
@@ -38,7 +39,6 @@ class TreeFrame(ttk.Frame):
     def edit_selected(self):
         item = self.tree.item(self.popup_selected)
         item['text'] = self.user_input.get()
-        # TODO fix this if necessary
 
     def show_edit_popup(self, event=None):
         win = tk.Toplevel()
@@ -64,7 +64,6 @@ class TreeFrame(ttk.Frame):
     def init_popup(self):
         self.tree.bind("<Button-3>", self.show_popup)
         self.popup.add_command(label="Edit Entry", command=self.show_edit_popup)
-        # TODO add entry if necessary
         # self.popup.add_command(label="Add entry", command=None)
         self.popup.add_command(label="Delete entry", command=self.remove_item)
 
@@ -230,7 +229,7 @@ class TreeFrame(ttk.Frame):
         self.master.bind("<Control-o>", self.open_file_tool)
         # TODO REMOVE THESE:
         self.master.bind("<Control-c>",
-                      lambda e: self.set_data(audit_parser.get_json_from_audit('MSCT_Windows_10_2004_v1.0.0.audit')))
+                         lambda e: self.set_data(audit_parser.get_json_from_audit('MSCT_Windows_10_2004_v1.0.0.audit')))
         self.master.bind("<Control-x>", lambda e: self.audit_system())
 
     def recursive_dict(self, index):
@@ -253,11 +252,12 @@ class TreeFrame(ttk.Frame):
                 return self.tree.item(index, 'text'), {key: val}
             return self.tree.item(index, 'text'), self.tree.item(childrens, 'text')
 
-    def get_json_dict(self):
+    def get_json_dict(self, get_checked_only=True):
         ret = {}
         for child in self.tree.get_children():
-            if self.tree.item(child, 'tags')[0] == 'unchecked':
-                continue
+            if get_checked_only:
+                if self.tree.item(child, 'tags')[0] == 'unchecked':
+                    continue
             key, value = self.recursive_dict(child)
             ret[key] = value
         return ret
@@ -287,23 +287,29 @@ class TreeFrame(ttk.Frame):
             self.tree.uncheck_ancestor(child)
             self.tree.uncheck_descendant(child)
 
-    def audit_system(self):
-        custom_item_iterator = get_custom_items(self.get_json_dict())
+    def update_dict(self, json_dict=None):
+        if json_dict is None:
+            json_dict = self.get_json_dict(get_checked_only=False)
+        custom_item_iterator = get_custom_items(json_dict)
         results = {"passed": {}, "failed": {}, "unknown": {}}
         for custom_item in custom_item_iterator:
             check_custom_item(custom_item, results)
+
+        self.set_data(results)
+        self.check_results = self.get_check_info()
+
+    def audit_system(self):
 
         root = tk.Toplevel(self)
         root.geometry('500x500')
         root.wm_title("Check audit")
         menubar = tk.Menu(root)
         app = TreeFrame(root)
+        app.update_dict(self.get_json_dict())
 
-        app.set_data(results)
         file_menu = tk.Menu(menubar, tearoff=0)
         file_menu.add_command(label="Save Json", accelerator='Ctrl+S', command=app.save_json)
         menubar.add_cascade(label="File", menu=file_menu)
-
         tools_menu = tk.Menu(menubar, tearoff=0)
         tools_menu.add_command(label="Expand All", accelerator="Ctrl+E", command=app.expand_all)
         tools_menu.add_command(label="Collapse All", accelerator="Ctrl+L", command=app.collapse_all)
@@ -311,11 +317,31 @@ class TreeFrame(ttk.Frame):
         tools_menu.add_command(label="Uncheck All", command=app.uncheck_all)
         menubar.add_cascade(label="Tools", menu=tools_menu)
 
+        audit_menu = tk.Menu(menubar, tearoff=0)
+        audit_menu.add_command(label="Write registry", command=app.write_registry)
+        audit_menu.add_command(label="Backup registry", command=app.backup_registry)
+        audit_menu.add_command(label="Restore registry", command=app.restore_registry)
+
+        def update_menubar():
+            app.update_dict()
+            menubar.entryconfigure(4, label=app.check_results)
+            pass
+
+        audit_menu.add_command(label="Recheck audit", command=update_menubar)
+
+        menubar.add_cascade(label="Audit", menu=audit_menu)
+
         app.grid(column=0, row=0, sticky=(tk.N, tk.S, tk.E, tk.W))
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
         root.config(menu=menubar)
-        menubar.add_command(label=app.get_check_info())
+
+        results_label = tk.Label(menubar, text=app.check_results, relief=tk.RAISED)
+        results_label.pack(side=tk.RIGHT)
+
+        menubar.add_command(label=app.check_results)
+
+        # menubar.add_command(label=app.check_results, command=app.update_dict)
 
     def get_check_info(self):
         info_dict = self.get_json_dict()
@@ -323,6 +349,15 @@ class TreeFrame(ttk.Frame):
         failed_num = len(info_dict['failed'])
         unk_num = len(info_dict['unknown'])
         return f"Passed: {passed_num}/{passed_num + failed_num} Unknown:{unk_num}"
+
+    def write_registry(self):
+        write_registry(self.get_json_dict())
+
+    def backup_registry(self):
+        backup_registry(self.get_json_dict())
+
+    def restore_registry(self):
+        restore_registry(self.get_json_dict())
 
 
 def get_custom_items(dictionary):
