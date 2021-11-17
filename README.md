@@ -1,3 +1,11 @@
-# LAB4/5CS
-GUI for performing an audit of the system, using the options that were selected, and outputs the results to the screen.
-Perform write to registry, and restore registry using this gui.
+# LAB6 SSO Security
+
+SSO Integration with 3 identity providers. Google, Facebook and Twitter
+
+Getting as much data as auth0 provides.
+
+Outputting the data as instructed.
+
+
+
+
