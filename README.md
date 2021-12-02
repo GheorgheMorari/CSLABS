@@ -1,9 +1,8 @@
-# LAB6 SSO Security
+# LAB7 Database Security
 
-SSO Integration with 3 identity providers. Google, Facebook and Twitter
+• Create a MongoDB database which would contain some secured sensitive data (protected via 2-way encryption);
 
-Getting as much data as auth0 provides.
+• Create an application which would display the data contained in the database (both common data and the decrypted sensitive data);
 
-Outputting the data as instructed.
-
+• Make sure that the sensitive data can only be accessed via your application (i.e. it is secure).
 
