@@ -7,5 +7,3 @@ Getting as much data as auth0 provides.
 Outputting the data as instructed.
 
 
-
-
