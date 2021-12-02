@@ -1,9 +1,10 @@
-# LAB6 SSO Security
+# LAB8 Email Confirmation
 
-SSO Integration with 3 identity providers. Google, Facebook and Twitter
+• Create an application that could register a new user;
 
-Getting as much data as auth0 provides.
+• Perform email confirmation (via a one time password / code or via a link);
 
-Outputting the data as instructed.
+• Output on the screen whether a user confirmed their email or did not confirm it yet.
+
 
 
