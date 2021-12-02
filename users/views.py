@@ -1,10 +1,17 @@
+import base64
+
+import rsa
 from django.contrib import auth, messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from .forms import StudentAddForm, LecturerAddForm
 from .decorators import student_required, lecturer_required
+from django.core.mail import EmailMessage
+
+from .models import User
+
+public_key, private_key = rsa.newkeys(512)
 
 
 def home(request):
@@ -35,6 +42,14 @@ def LecturerSignUp(request):
             lecturer = form.save(commit=False)
             lecturer.user_type = 'lecturer'
             lecturer.save()
+
+            # email_body = str(lecturer.id)+str(lecturer.id_number)
+            to_encode = str(lecturer.user.id) + str(lecturer.id_number)
+            print("encoded:" + to_encode)
+            encrypted_bytes = rsa.encrypt(to_encode.encode('latin1', errors="ignore"), public_key)
+            email_body = base64.b64encode(encrypted_bytes).decode('latin1', errors="ignore")
+            email = EmailMessage("Activate your account", email_body, "noreply@noreply.noreply", [lecturer.user.email])
+            email.send()
             return redirect('home')
     else:
         form = LecturerAddForm()
@@ -86,3 +101,27 @@ def ForLecturer(request):
     #     else:
     #         return HttpResponse("Sorry")
     return render(request, 'teacher.html')
+
+
+@login_required
+def verify(request):
+    if request.method == "POST":
+        code = request.POST['code_input']
+        user = User.objects.get(username=request.user.username)
+        test_byte = (str(user.id) + str(user.username)).encode('latin1', errors="ignore")
+        print("Test byte:", test_byte)
+
+        try:
+            base_64_decoded = base64.b64decode(code)
+            real_code = rsa.decrypt(base_64_decoded, private_key)
+            print("decoded:" + real_code.decode('latin1', errors='ignore'))
+
+            if test_byte == real_code:
+                user.verified_email = True
+                user.save()
+        except:
+            pass
+
+        return redirect('home')
+
+    return render(request, 'verify.html')

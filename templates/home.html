@@ -2,11 +2,20 @@
 {% block content %}
     {% if request.user.is_authenticated %}
         <h2>This is home page for {{ user.username }} </h2>
+
+        {% if user.verified_email %}
+        <h2>Email is verified</h2>
+        {% else %}
+        <h2>Email is not verified</h2>
+        <h4><a href="{% url 'verify' %}">Verify email</a></h4>
+        {% endif %}
+
+
         {% if user.is_student %}
-        <h2>You can view data, but not private data</h2>
+            <h2>You can view data, but not private data</h2>
         {% endif %}
         {% if user.is_lecturer %}
-        <h2>You can view data, and private data</h2>
+            <h2>You can view data, and private data</h2>
         {% endif %}
         <h4><a href="{% url 'view_data' %}">View Data</a></h4>
         <h4><a href="{% url 'view_private_data' %}">View Private Data</a></h4>

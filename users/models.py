@@ -9,6 +9,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=60,blank=True, null=True)
     address = models.CharField(max_length=255,null=True,blank=True)
     email = models.EmailField(blank=True,null=True)
+    verified_email = models.BooleanField(default=False)
 
 class Student(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE)
